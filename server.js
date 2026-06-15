@@ -151,8 +151,8 @@ app.post('/audit', async (req, res) => {
         if (overallScore > 100) overallScore = 100;
         if (overallScore < 10) overallScore = 35; 
 
-       // ==========================================
-        // NEW: PHASE 2.2 - GEMINI AI ACTION PLAN (100% FREE)
+        // ==========================================
+        // PHASE 2.2 - GEMINI AI ACTION PLAN (100% FREE)
         // ==========================================
         let aiRecommendations = [
             "Optimize your page load speed to pass Google's Core Web Vitals.",
@@ -194,3 +194,26 @@ Output strictly as a JSON object with a single key "recommendations" containing 
             }
         }
         // ==========================================
+
+        let scoreLabel = overallScore >= 80 ? 'Good' : (overallScore >= 60 ? 'Needs Improvement' : 'Critical Issues Found');
+        try { await Lead.create({ name, phone, url: targetUrl, overallScore }); } catch (dbErr) {}
+
+        return res.json({ overallScore, scoreLabel, psScores, coreWebVitals, htmlChecks, extractedKeywords, aiRecommendations, failedAudits: failedAudits.slice(0, 5) });
+
+    } catch (globalErr) {
+        return res.status(500).json({ error: 'System crash during analysis.' });
+    }
+});
+
+app.get('/leads', async (req, res) => {
+    const key = req.query.key;
+    if (key !== 'diginodal123') return res.status(403).send('Unauthorized');
+    try {
+        const leads = await Lead.find().sort({ auditDate: -1 });
+        let html = `<!DOCTYPE html><html><head><title>Diginodal Leads</title><style>body { font-family: -apple-system, sans-serif; padding: 40px; background: #0F172A; color: #fff; } table { width: 100%; border-collapse: collapse; background: #1E293B; border-radius: 8px; overflow: hidden; } th, td { padding: 16px; text-align: left; border-bottom: 1px solid #334155; } th { background: #2563EB; color: white; } a { color: #60A5FA; text-decoration: none; } .score { font-weight: bold; } .good { color: #10B981; } .avg { color: #F59E0B; } .bad { color: #EF4444; }</style></head><body><h2>Diginodal SEO Leads</h2><table><tr><th>Date</th><th>Name</th><th>Phone</th><th>Website</th><th>Score</th></tr>${leads.map(lead => `<tr><td>${new Date(lead.auditDate).toLocaleDateString()}</td><td>${lead.name}</td><td><a href="https://wa.me/${lead.phone.replace(/\D/g,'')}" target="_blank">${lead.phone}</a></td><td><a href="${lead.url}" target="_blank">${lead.url}</a></td><td class="score ${lead.overallScore >= 80 ? 'good' : (lead.overallScore >= 60 ? 'avg' : 'bad')}">${lead.overallScore}/100</td></tr>`).join('')}</table></body></html>`;
+        res.send(html);
+    } catch (err) { res.status(500).send('Database error'); }
+});
+
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
