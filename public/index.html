@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free SEO Audit | Diginodal</title>
+    <style>
+        :root {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --text-main: #FFFFFF;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --good: #10B981;
+            --avg: #F59E0B;
+            --bad: #EF4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding: 20px; }
+        
+        .container { max-width: 800px; margin: 40px auto; background: var(--card-bg); padding: 40px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .logo { font-size: 24px; font-weight: 800; color: var(--text-main); text-align: center; margin-bottom: 30px; letter-spacing: 1px;}
+        .logo span { color: var(--accent); }
+        
+        h1 { text-align: center; font-size: 32px; margin-bottom: 10px; line-height: 1.2; }
+        p.subtitle { text-align: center; color: var(--text-muted); font-size: 18px; margin-bottom: 30px; }
+
+        /* Form State */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500; color: var(--text-muted); }
+        input { width: 100%; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); color: var(--text-main); font-size: 16px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        button { display: block; width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        button:hover { background: var(--accent-hover); }
+
+        /* Loading State */
+        #loading-state { text-align: center; padding: 40px 0; display: none; }
+        .spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-text { font-size: 18px; font-weight: 500; }
+
+        /* Report State */
+        #report-state { display: none; }
+        .score-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+        .score-circle { position: relative; width: 160px; height: 160px; }
+        .score-circle svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .score-circle circle { fill: none; stroke-width: 8; }
+        .score-bg { stroke: var(--border); }
+        .score-prog { stroke: var(--accent); stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1.5s ease-out; stroke-linecap: round; }
+        .score-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .score-text span { font-size: 48px; font-weight: 800; line-height: 1; }
+        .score-label { margin-top: 15px; font-size: 20px; font-weight: 600; }
+
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: var(--bg-color); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
+        .metric-card .num { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
+        .metric-card .title { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .section-title { font-size: 20px; margin: 30px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .check-list { list-style: none; }
+        .check-item { display: flex; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .check-item:last-child { border-bottom: none; }
+        .check-icon { margin-right: 15px; font-size: 20px; line-height: 1; }
+        .icon-pass { color: var(--good); }
+        .icon-fail { color: var(--bad); }
+        .icon-warn { color: var(--avg); }
+        .check-content strong { display: block; font-size: 16px; margin-bottom: 4px; }
+        .check-content p { font-size: 14px; color: var(--text-muted); line-height: 1.4; }
+
+        .cta-section { margin-top: 40px; background: var(--bg-color); padding: 30px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
+        .cta-section h3 { margin-bottom: 10px; font-size: 22px; }
+        .cta-section p { margin-bottom: 20px; color: var(--text-muted); }
+        .wa-button { display: inline-flex; align-items: center; justify-content: center; background: #25D366; color: #fff; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        .wa-button:hover { background: #1EBE55; }
+        
+        .error-msg { background: rgba(239, 68, 68, 0.1); color: var(--bad); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; display: none; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        @media (max-width: 600px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">digi<span>nodal</span></div>
+
+        <div id="form-state">
+            <h1>Free SEO Audit for Your Business</h1>
+            <p class="subtitle">Find out why your competitors rank higher on Google</p>
+            
+            <div id="error-message" class="error-msg"></div>
+
+            <form id="auditForm">
+                <div class="form-group">
+                    <label>Business Name</label>
+                    <input type="text" id="name" required placeholder="e.g. Diginodal Media">
+                </div>
+                <div class="form-group">
+                    <label>Website URL</label>
+                    <input type="text" id="url" required placeholder="diginodal.com">
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp Number</label>
+                    <input type="tel" id="phone" required placeholder="+91 98765 43210">
+                </div>
+                <button type="submit">Run Free Audit</button>
+            </form>
+        </div>
+
+        <div id="loading-state">
+            <div class="spinner"></div>
+            <div id="loading-text">Analyzing your website...</div>
+        </div>
+
+        <div id="report-state">
+            
+            <div class="score-container">
+                <div class="score-circle">
+                    <svg viewBox="0 0 160 160">
+                        <circle class="score-bg" cx="80" cy="80" r="70"></circle>
+                        <circle class="score-prog" id="score-ring" cx="80" cy="80" r="70"></circle>
+                    </svg>
+                    <div class="score-text">
+                        <span id="res-overall">0</span>
+                    </div>
+                </div>
+                <div class="score-label" id="res-label">Score</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="num" id="res-perf">0</div>
+                    <div class="title">Performance</div>
+                </div>
+                <div class="metric-card">
+                    <div class="num" id="res-seo">0</div>
+                    <div class="title">SEO</div>
+                </div>
+                <div class="metric-card">
+                    <div class="num" id="res-acc">0</div>
+                    <div class="title">Accessibility</div>
+                </div>
+            </div>
+
+            <h3 class="section-title">Core Web Vitals</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="num" id="res-fcp" style="font-size: 22px;">-</div>
+                    <div class="title">First Paint</div>
+                </div>
+                <div class="metric-card">
+                    <div class="num" id="res-lcp" style="font-size: 22px;">-</div>
+                    <div class="title">Largest Paint</div>
+                </div>
+                <div class="metric-card">
+                    <div class="num" id="res-tbt" style="font-size: 22px;">-</div>
+                    <div class="title">Blocking Time</div>
+                </div>
+            </div>
+
+            <h3 class="section-title">On-Page HTML Checks</h3>
+            <ul class="check-list" id="html-checks-list">
+                </ul>
+
+            <h3 class="section-title">Technical Errors Found</h3>
+            <ul class="check-list" id="failed-audits-list">
+                </ul>
+
+            <div class="cta-section">
+                <h3>Want us to fix these issues?</h3>
+                <p>Get a free consultation — we fix all of this starting at Rs. 4,999</p>
+                <a href="https://wa.me/919373982514" target="_blank" class="wa-button">
+                    <svg style="width:20px;height:20px;margin-right:8px;" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Chat on WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const formState = document.getElementById('form-state');
+        const loadingState = document.getElementById('loading-state');
+        const reportState = document.getElementById('report-state');
+        const errorMsg = document.getElementById('error-message');
+        const loadingText = document.getElementById('loading-text');
+
+        const msgs = ['Analyzing your website...', 'Checking Google scores...', 'Finding SEO issues...', 'Preparing your report...'];
+        let msgIndex = 0;
+        let msgInterval;
+
+        document.getElementById('auditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const url = document.getElementById('url').value;
+            const phone = document.getElementById('phone').value;
+
+            errorMsg.style.display = 'none';
+            formState.style.display = 'none';
+            loadingState.style.display = 'block';
+
+            // Rotate loading messages
+            msgInterval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % msgs.length;
+                loadingText.innerText = msgs[msgIndex];
+            }, 3000);
+
+            try {
+                // Ensure to target the correct API URL depending on deployment
+                const response = await fetch('/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, url, phone })
+                });
+
+                if (!response.ok) throw new Error('Failed to analyze');
+
+                const data = await response.json();
+                renderReport(data);
+
+            } catch (err) {
+                formState.style.display = 'block';
+                loadingState.style.display = 'none';
+                errorMsg.innerText = 'We could not analyze this website. Please check the URL and try again.';
+                errorMsg.style.display = 'block';
+            } finally {
+                clearInterval(msgInterval);
+            }
+        });
+
+        function renderReport(data) {
+            loadingState.style.display = 'none';
+            reportState.style.display = 'block';
+
+            // Set Color based on score
+            let color = 'var(--bad)';
+            if (data.overallScore >= 80) color = 'var(--good)';
+            else if (data.overallScore >= 60) color = 'var(--avg)';
+
+            document.getElementById('res-overall').innerText = data.overallScore;
+            document.getElementById('res-label').innerText = data.scoreLabel;
+            document.getElementById('res-label').style.color = color;
+            document.getElementById('res-overall').style.color = color;
+
+            // Animate SVG Ring
+            const ring = document.getElementById('score-ring');
+            ring.style.stroke = color;
+            const offset = 440 - (440 * data.overallScore) / 100;
+            setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+
+            // Set Metrics
+            document.getElementById('res-perf').innerText = Math.round(data.psScores.performance);
+            document.getElementById('res-seo').innerText = Math.round(data.psScores.seo);
+            document.getElementById('res-acc').innerText = Math.round(data.psScores.accessibility);
+            
+            document.getElementById('res-fcp').innerText = data.coreWebVitals.fcp;
+            document.getElementById('res-lcp').innerText = data.coreWebVitals.lcp;
+            document.getElementById('res-tbt').innerText = data.coreWebVitals.tbt;
+
+            // Render HTML Checks
+            const htmlList = document.getElementById('html-checks-list');
+            htmlList.innerHTML = data.htmlChecks.map(check => {
+                let icon = check.status === 'pass' ? '✓' : (check.status === 'fail' ? '✕' : '!');
+                let iClass = check.status === 'pass' ? 'icon-pass' : (check.status === 'fail' ? 'icon-fail' : 'icon-warn');
+                return `
+                <li class="check-item">
+                    <div class="check-icon ${iClass}">${icon}</div>
+                    <div class="check-content">
+                        <strong>${check.check}</strong>
+                        <p>${check.detail}</p>
+                    </div>
+                </li>`;
+            }).join('');
+
+            // Render Failed Audits
+            const failList = document.getElementById('failed-audits-list');
+            if (data.failedAudits.length === 0) {
+                failList.innerHTML = '<p style="color:var(--text-muted)">Great job! No major technical errors found.</p>';
+            } else {
+                failList.innerHTML = data.failedAudits.map(fail => `
+                <li class="check-item">
+                    <div class="check-icon icon-fail">✕</div>
+                    <div class="check-content">
+                        <strong>${fail.title}</strong>
+                        <p>${fail.description}</p>
+                    </div>
+                </li>`).join('');
+            }
+        }
+    </script>
+</body>
+</html>
