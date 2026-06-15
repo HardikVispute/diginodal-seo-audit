@@ -149,6 +149,15 @@
             </div>
 
             <h3 class="section-title">Core Web Vitals</h3>
+            <h3 class="section-title">Actual Keywords Found</h3>
+            <h3 class="section-title">Expert Action Plan</h3>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px;">
+                <ul id="ai-recs-list" style="margin-left: 20px; color: var(--text-muted); line-height: 1.8;">
+                    </ul>
+            </div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">We scraped the text on this page to see what search terms the content is actually optimized for.</p>
+            <div class="metrics-grid" id="keywords-grid">
+                </div>
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="num" id="res-fcp" style="font-size: 22px;">-</div>
@@ -263,6 +272,28 @@
             document.getElementById('res-lcp').innerText = data.coreWebVitals.lcp;
             document.getElementById('res-tbt').innerText = data.coreWebVitals.tbt;
 
+            // Render Keyword Extractor Data
+            // Render AI Recommendations
+            const aiList = document.getElementById('ai-recs-list');
+            if (data.aiRecommendations && data.aiRecommendations.length > 0) {
+                aiList.innerHTML = data.aiRecommendations.map(rec => `
+                    <li style="margin-bottom: 10px;">
+                        <strong style="color:var(--text-main)">Action Step:</strong> ${rec}
+                    </li>
+                `).join('');
+            }
+            const kwGrid = document.getElementById('keywords-grid');
+            if (data.extractedKeywords && data.extractedKeywords.length > 0) {
+                kwGrid.innerHTML = data.extractedKeywords.map(kw => `
+                    <div class="metric-card">
+                        <div class="num" style="font-size: 20px;">${kw.keyword}</div>
+                        <div class="title">Used ${kw.count} times</div>
+                    </div>
+                `).join('');
+            } else {
+                kwGrid.innerHTML = '<p style="color:var(--text-muted); grid-column: span 3;">Not enough text found to extract meaningful keywords.</p>';
+            }
+            
             // Render HTML Checks
             const htmlList = document.getElementById('html-checks-list');
             htmlList.innerHTML = data.htmlChecks.map(check => {
