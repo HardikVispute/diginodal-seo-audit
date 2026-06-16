@@ -40,7 +40,6 @@
         #loading-state { text-align: center; padding: 40px 0; display: none; }
         .spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #loading-text { font-size: 18px; font-weight: 500; }
 
         /* Report State */
         #report-state { display: none; }
@@ -115,7 +114,13 @@
 
         <div id="loading-state">
             <div class="spinner"></div>
-            <div id="loading-text">Analyzing your website...</div>
+            <div id="loading-steps" style="font-family: monospace; font-size: 14px; text-align: left; max-width: 400px; margin: 0 auto; line-height: 2;">
+                <div id="step-1" style="color: var(--text-muted);">○ Connecting to target server...</div>
+                <div id="step-2" style="color: var(--text-muted);">○ Scraping HTML structure & image alt data...</div>
+                <div id="step-3" style="color: var(--text-muted);">○ Extracting TF-IDF keyword density matrix...</div>
+                <div id="step-4" style="color: var(--text-muted);">○ Auditing social tags & security layers...</div>
+                <div id="step-5" style="color: var(--text-muted);">○ Consulting Gemini AI for sales action steps...</div>
+            </div>
         </div>
 
         <div id="report-state">
@@ -197,11 +202,6 @@
         const loadingState = document.getElementById('loading-state');
         const reportState = document.getElementById('report-state');
         const errorMsg = document.getElementById('error-message');
-        const loadingText = document.getElementById('loading-text');
-
-        const msgs = ['Analyzing your website...', 'Checking Google scores...', 'Finding SEO issues...', 'Preparing your report...'];
-        let msgIndex = 0;
-        let msgInterval;
 
         document.getElementById('auditForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -210,36 +210,77 @@
             const url = document.getElementById('url').value;
             const phone = document.getElementById('phone').value;
 
+            // Reset UI states
             errorMsg.style.display = 'none';
             formState.style.display = 'none';
+            reportState.style.display = 'none'; 
             loadingState.style.display = 'block';
 
-            // Rotate loading messages
-            msgInterval = setInterval(() => {
-                msgIndex = (msgIndex + 1) % msgs.length;
-                loadingText.innerText = msgs[msgIndex];
-            }, 3000);
+            // Reset step texts
+            const stepIds = ['step-1', 'step-2', 'step-3', 'step-4', 'step-5'];
+            const initialTexts = [
+                '○ Connecting to target server...',
+                '○ Scraping HTML structure & image alt data...',
+                '○ Extracting TF-IDF keyword density matrix...',
+                '○ Auditing social tags & security layers...',
+                '○ Consulting Gemini AI for sales action steps...'
+            ];
+            
+            stepIds.forEach((id, idx) => {
+                const el = document.getElementById(id);
+                el.innerText = initialTexts[idx];
+                el.style.color = 'var(--text-muted)';
+            });
+
+            // Sequence data
+            const steps = [
+                { id: 'step-1', text: '● Server handshake complete. Fetching data...' },
+                { id: 'step-2', text: '● DOM Tree parsed. Evaluation complete.' },
+                { id: 'step-3', text: '● Keywords calculated and indexed.' },
+                { id: 'step-4', text: '● Open Graph and security metadata audited.' },
+                { id: 'step-5', text: '● Gemini AI review finalized. Compiling report...' }
+            ];
+
+            // 1. Start the animation timer (Guarantees at least a 6.5s delay for premium UX feel)
+            const animationPromise = new Promise(resolve => {
+                steps.forEach((step, index) => {
+                    setTimeout(() => {
+                        const el = document.getElementById(step.id);
+                        if(el) {
+                            el.innerText = step.text;
+                            el.style.color = '#10B981';
+                        }
+                        // Resolve promise when the last step finishes
+                        if (index === steps.length - 1) {
+                            setTimeout(resolve, 800); 
+                        }
+                    }, (index + 1) * 1200);
+                });
+            });
 
             try {
-                // Ensure to target the correct API URL depending on deployment
-                const response = await fetch('/audit', {
+                // 2. Start the actual server fetch simultaneously
+                const fetchPromise = fetch('/audit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, url, phone })
+                }).then(res => {
+                    if (!res.ok) throw new Error('Failed to analyze');
+                    return res.json();
                 });
 
-                if (!response.ok) throw new Error('Failed to analyze');
-
-                const data = await response.json();
+                // 3. Wait until BOTH the fake delay and the real server response are finished
+                const [_, data] = await Promise.all([animationPromise, fetchPromise]);
+                
+                // Show the report
                 renderReport(data);
 
             } catch (err) {
+                // If it fails, force the animation to skip to the end and show error
                 formState.style.display = 'block';
                 loadingState.style.display = 'none';
                 errorMsg.innerText = 'We could not analyze this website. Please check the URL and try again.';
                 errorMsg.style.display = 'block';
-            } finally {
-                clearInterval(msgInterval);
             }
         });
 
@@ -272,7 +313,6 @@
             document.getElementById('res-lcp').innerText = data.coreWebVitals.lcp;
             document.getElementById('res-tbt').innerText = data.coreWebVitals.tbt;
 
-            // Render Keyword Extractor Data
             // Render AI Recommendations
             const aiList = document.getElementById('ai-recs-list');
             if (data.aiRecommendations && data.aiRecommendations.length > 0) {
@@ -282,6 +322,8 @@
                     </li>
                 `).join('');
             }
+            
+            // Render Keyword Extractor Data
             const kwGrid = document.getElementById('keywords-grid');
             if (data.extractedKeywords && data.extractedKeywords.length > 0) {
                 kwGrid.innerHTML = data.extractedKeywords.map(kw => `
