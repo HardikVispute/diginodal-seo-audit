@@ -1019,7 +1019,7 @@
 <script>
     // ── State ──
     let currentSiteName = '';
-
+    let lastAuditData = null; 
     // ── Helpers ──
     function show(id) { document.getElementById(id).style.display = 'block'; }
     function hide(id) { document.getElementById(id).style.display = 'none'; }
@@ -1144,17 +1144,41 @@
         });
     }
 
-    // ── NEW: PDF Generation Function ──
-    function downloadPDF() {
-        const element = document.getElementById('printable-report');
-        const opt = {
-            margin:       10,
-            filename:     `${currentSiteName.replace(/\s+/g, '-')}-SEO-Audit.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0F1623' },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
+   // ── NEW: Backend PDF Generation Function ──
+    async function downloadPDF() {
+        if (!lastAuditData) return;
+        
+        // Add siteName and url to the payload so the PDF knows what to print
+        const payload = { ...lastAuditData, siteName: currentSiteName, url: document.getElementById('url').value };
+        
+        // Change button text to show it's working
+        const btn = document.querySelector('button[onclick="downloadPDF()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ Generating...";
+        
+        try {
+            const response = await fetch('/download-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) throw new Error('PDF failed');
+            
+            // Create a hidden link to download the returned PDF file
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `${currentSiteName.replace(/\s+/g, '-')}-SEO-Audit.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            btn.innerText = originalText;
+        }
     }
 
     // ── Restart ──
@@ -1169,6 +1193,7 @@
 
     // ── Render ──
     function renderReport(data) {
+        lastAuditData = data;
         hide('loading-state');
         document.getElementById('res-site-name').textContent = currentSiteName;
 

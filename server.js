@@ -1,18 +1,5 @@
 /**
  * Diginodal SEO Audit Engine — Enhanced
- *
- * What changed vs the original:
- * - SSRF protection: blocks private/loopback IPs before fetching
- * - Scoring rewrite: transparent, 5-pillar weighted formula (no magic floors)
- * - PageSpeed: runs BOTH mobile and desktop, picks the worse performer
- * - failedAudits: deduplicated, sorted by impact score, capped at 8
- * - HTML checks: +6 new checks (OG tags, canonical, schema, word count, internal links, page weight estimate)
- * - Keyword extraction: bigram support, 60+ stopword list, filters numbers, TF-style scoring
- * - Gemini prompt: structured context block with all audit data, asks for 5 recs with titles
- * - Fallback recs: built dynamically from actual failing checks, not hardcoded strings
- * - /leads dashboard: styled with score badges, masked phone numbers, search/filter, export CSV
- * - Input validation: sanitizes name/phone, rejects obviously invalid URLs
- * - Lead deduplication: upserts by phone+url within a 24h window instead of inserting blindly
  */
 
 require('dotenv').config();
@@ -22,7 +9,7 @@ const cors       = require('cors');
 const cheerio    = require('cheerio');
 const path       = require('path');
 const { URL }    = require('url');
-const nodemailer = require('nodemailer'); // <-- NEW: Email package
+const nodemailer = require('nodemailer'); 
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -40,26 +27,25 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/diginodal_s
 
 const LeadSchema = new mongoose.Schema({
   name:         { type: String, trim: true },
-  email:        { type: String, trim: true }, // <-- NEW: Added Email
+  email:        { type: String, trim: true }, 
   phone:        { type: String, trim: true },
   url:          { type: String, trim: true },
   overallScore: Number,
   scoreLabel:   String,
-  // Pillar scores stored for richer dashboard filtering
   pillars: {
     performance:   Number,
     seo:           Number,
     accessibility: Number,
-    htmlHealth:    Number,   // 0–100 derived from HTML checks
+    htmlHealth:    Number,  
   },
-  topIssues:    [String],   // top 3 failing check names for quick glance
+  topIssues:    [String],   
   auditDate:    { type: Date, default: Date.now },
   contacted:    { type: Boolean, default: false },
   notes:        { type: String, default: '' },
 });
 const Lead = mongoose.model('Lead', LeadSchema);
 
-// <-- NEW: Configure Nodemailer to send instant alerts
+// Configure Nodemailer to send instant alerts
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -72,34 +58,26 @@ const transporter = nodemailer.createTransport({
 // Utilities
 // ─────────────────────────────────────────────
 
-/** Normalise a user-supplied URL. Returns null if unparseable. */
 function parseUrl(raw) {
   let s = raw.trim();
   if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
   try { return new URL(s); } catch { return null; }
 }
 
-/**
- * SSRF guard — reject requests to private / loopback / link-local ranges.
- * This prevents someone submitting "http://localhost/admin" etc.
- */
 function isSafeHostname(hostname) {
   const h = hostname.toLowerCase();
-  // Loopback / localhost
   if (h === 'localhost' || h === '127.0.0.1' || h === '::1') return false;
-  // Private IPv4 ranges
   const privateRanges = [
     /^10\./,
     /^172\.(1[6-9]|2\d|3[01])\./,
     /^192\.168\./,
-    /^169\.254\./,   // link-local
+    /^169\.254\./,   
     /^0\./,
-    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,  // carrier-grade NAT
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,  
   ];
   return !privateRanges.some(r => r.test(h));
 }
 
-/** Fetch with a timeout. Throws on timeout or network error. */
 async function safeFetch(url, options = {}, timeout = 12000) {
   const ctrl = new AbortController();
   const tid  = setTimeout(() => ctrl.abort(), timeout);
@@ -113,10 +91,8 @@ async function safeFetch(url, options = {}, timeout = 12000) {
   }
 }
 
-/** Clamp a number between min and max. */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-/** Derive a human-readable label and a summary sentence from the score. */
 function scoreInfo(score) {
   if (score >= 85) return { label: 'Excellent',          summary: 'Your site is in excellent shape — small wins remain but you\'re already ahead of most competitors.' };
   if (score >= 70) return { label: 'Good',               summary: 'A solid foundation. Fixing the highlighted issues could push you into the top results for local searches.' };
@@ -139,10 +115,6 @@ const STOP_WORDS = new Set([
   'next','prev','previous','image','photo','video','icon','logo','button','link',
 ]);
 
-/**
- * Extract top keywords (unigrams + bigrams) from page text.
- * Returns [{keyword, count, type}] sorted by count desc.
- */
 function extractKeywords(text, topN = 8) {
   const clean = text
     .toLowerCase()
@@ -153,14 +125,12 @@ function extractKeywords(text, topN = 8) {
   const words = clean.split(' ').filter(w =>
     w.length > 3 &&
     !STOP_WORDS.has(w) &&
-    !/^\d+$/.test(w)  // skip pure numbers
+    !/^\d+$/.test(w)  
   );
 
-  // Unigram counts
   const uni = {};
   words.forEach(w => { uni[w] = (uni[w] || 0) + 1; });
 
-  // Bigram counts (only if both words not stopwords and both > 3 chars)
   const rawWords = clean.split(' ');
   const bi = {};
   for (let i = 0; i < rawWords.length - 1; i++) {
@@ -171,7 +141,6 @@ function extractKeywords(text, topN = 8) {
     }
   }
 
-  // Merge: bigrams with count >= 2 get priority; weight bigrams 1.5×
   const merged = {};
   Object.entries(uni).forEach(([k, v]) => { merged[k] = { count: v, type: 'unigram' }; });
   Object.entries(bi).forEach(([k, v]) => {
@@ -191,20 +160,6 @@ function extractKeywords(text, topN = 8) {
 // ─────────────────────────────────────────────
 // Scoring Engine
 // ─────────────────────────────────────────────
-/**
- * 5-pillar transparent scoring:
- *
- * Pillar              Weight   Source
- * ─────────────────── ──────   ───────────────────────────
- * Performance (mobile)  25%   PageSpeed
- * Performance (desktop) 10%   PageSpeed
- * SEO (Lighthouse)      25%   PageSpeed
- * Accessibility         10%   PageSpeed
- * HTML Health           30%   Our own checks (0-100 derived)
- *
- * HTML Health = (passing checks / total checks) × 100
- * All inputs clamped 0-100 before weighting.
- */
 function calcOverallScore({ perfMobile, perfDesktop, seoScore, accessScore, htmlHealth }) {
   const score =
     clamp(perfMobile,  0, 100) * 0.25 +
@@ -226,7 +181,6 @@ async function runPageSpeed(targetUrl, strategy = 'mobile') {
   return res.json();
 }
 
-/** Extract scores and audits from a Lighthouse result. */
 function parseLighthouse(lh) {
   const cats    = lh.categories   || {};
   const audits  = lh.audits       || {};
@@ -245,7 +199,6 @@ function parseLighthouse(lh) {
     si:  audits['speed-index']?.displayValue              || 'N/A',
   };
 
-  // Collect failed audits with their impact weight
   const AUDIT_IMPACT = {
     'render-blocking-resources': 'high',
     'uses-optimized-images':     'high',
@@ -282,13 +235,11 @@ function parseLighthouse(lh) {
     }
   }
 
-  // Sort by impact, then by score ascending (worse first)
   failed.sort((a, b) =>
     (IMPACT_ORDER[a.impact] - IMPACT_ORDER[b.impact]) ||
     (a.score - b.score)
   );
 
-  // Deduplicate by title (mobile + desktop can overlap)
   const seen = new Set();
   const dedupedFailed = failed.filter(f => {
     if (seen.has(f.title)) return false;
@@ -311,7 +262,6 @@ async function auditHtml(targetUrl) {
     if (status === 'pass') passCount++;
   }
 
-  // 1. HTTPS
   const isHttps = targetUrl.startsWith('https://');
   addCheck('HTTPS Encryption', isHttps ? 'pass' : 'fail',
     isHttps ? 'Secure HTTPS connection confirmed.' : 'No SSL — Google marks HTTP sites as "Not Secure" and demotes them.');
@@ -332,7 +282,6 @@ async function auditHtml(targetUrl) {
     pageBytes        = Buffer.byteLength(html, 'utf8');
     const $          = cheerio.load(html);
 
-    // 2. Title tag
     const title      = $('title').text().trim();
     const titleLen   = title.length;
     const titleOk    = titleLen >= 30 && titleLen <= 60;
@@ -342,7 +291,6 @@ async function auditHtml(targetUrl) {
         ? `"${title.slice(0, 60)}${title.length > 60 ? '…' : ''}" — ${titleLen} chars (ideal: 30–60)`
         : 'No <title> tag found. This is a critical SEO missing piece.');
 
-    // 3. Meta description
     const desc       = $('meta[name="description"]').attr('content') || '';
     const descLen    = desc.length;
     const descOk     = descLen >= 120 && descLen <= 160;
@@ -352,7 +300,6 @@ async function auditHtml(targetUrl) {
         ? `${descLen} chars (ideal: 120–160). ${descOk ? 'Length is good.' : descLen < 120 ? 'Too short — expand to include primary keywords.' : 'Too long — Google will truncate this in search results.'}`
         : 'Missing meta description. Google may generate one automatically, often poorly.');
 
-    // 4. H1 tag
     const h1s        = $('h1');
     const h1Count    = h1s.length;
     const h1Text     = h1s.first().text().trim().slice(0, 80);
@@ -362,7 +309,6 @@ async function auditHtml(targetUrl) {
         : h1Count  > 1 ? `${h1Count} H1 tags found — Google gets confused about which is primary.`
         : `H1: "${h1Text}"`);
 
-    // 5. Image alt text
     const allImgs    = $('img');
     const missingAlt = $('img:not([alt]), img[alt=""]');
     const imgTotal   = allImgs.length;
@@ -375,7 +321,6 @@ async function auditHtml(targetUrl) {
         : missingCnt === 0 ? `All ${imgTotal} images have alt text — good for accessibility and image search.`
         : `${missingCnt}/${imgTotal} images are missing alt text. These are invisible to Google Image Search.`);
 
-    // 6. Mobile viewport
     const viewport   = $('meta[name="viewport"]').attr('content') || '';
     const vpOk       = viewport.includes('width=device-width');
     addCheck('Mobile Viewport',
@@ -383,7 +328,6 @@ async function auditHtml(targetUrl) {
       vpOk ? 'Mobile viewport configured correctly.'
            : 'Missing or incorrect viewport meta tag — site will appear desktop-only on mobile devices.');
 
-    // 7. Open Graph tags (social sharing)
     const ogTitle    = $('meta[property="og:title"]').attr('content');
     const ogDesc     = $('meta[property="og:description"]').attr('content');
     const ogImage    = $('meta[property="og:image"]').attr('content');
@@ -394,14 +338,12 @@ async function auditHtml(targetUrl) {
         : ogCount === 0 ? 'No Open Graph tags. Shared links will show a blank preview on WhatsApp/Facebook.'
         : `Only ${ogCount}/3 OG tags found (missing: ${['og:title','og:description','og:image'].filter((_,i) => ![ogTitle,ogDesc,ogImage][i]).join(', ')}).`);
 
-    // 8. Canonical tag
     const canonical  = $('link[rel="canonical"]').attr('href') || '';
     addCheck('Canonical Tag',
       canonical ? 'pass' : 'warning',
       canonical ? `Canonical set to: ${canonical.slice(0, 80)}`
                 : 'No canonical tag — Google may index duplicate versions of this page separately, splitting ranking power.');
 
-    // 9. Structured Data (JSON-LD or Microdata)
     const jsonLd     = $('script[type="application/ld+json"]').length;
     const microdata  = $('[itemscope]').length;
     const hasSchema  = jsonLd > 0 || microdata > 0;
@@ -410,7 +352,6 @@ async function auditHtml(targetUrl) {
       hasSchema ? `Schema markup detected (${jsonLd} JSON-LD block${jsonLd !== 1 ? 's' : ''}${microdata ? `, ${microdata} microdata element${microdata !== 1 ? 's' : ''}` : ''}).`
                 : 'No schema markup found. Adding LocalBusiness or Organization schema can unlock rich results in Google Search.');
 
-    // 10. Word count (content depth signal)
     $('script, style, noscript, iframe, nav, footer, header, aside').remove();
     const bodyText   = $('body').text().replace(/\s+/g, ' ').trim();
     wordCount        = bodyText.split(' ').filter(w => w.length > 0).length;
@@ -420,7 +361,6 @@ async function auditHtml(targetUrl) {
         : wordCount >= 100 ? `${wordCount} words — thin content. Google prefers 300+ words per page to understand the topic.`
         : `Only ${wordCount} words detected. This page has very little content for Google to index.`);
 
-    // 11. Page weight
     const pageSizeKB = Math.round(pageBytes / 1024);
     addCheck('Page Size',
       pageSizeKB <= 100 ? 'pass' : pageSizeKB <= 200 ? 'warning' : 'fail',
@@ -428,7 +368,6 @@ async function auditHtml(targetUrl) {
         : pageSizeKB <= 200 ? `${pageSizeKB} KB — slightly heavy. Minify HTML and remove unused code to reduce size.`
         : `${pageSizeKB} KB — very large HTML document. This directly slows page load time and hurts ranking.`);
 
-    // 12. Internal links
     const baseOrigin = new URL(targetUrl).origin;
     const internalLinks = $('a[href]').filter((_, el) => {
       const href = $(el).attr('href') || '';
@@ -440,15 +379,12 @@ async function auditHtml(targetUrl) {
         : internalLinks < 3 ? `Only ${internalLinks} internal link${internalLinks !== 1 ? 's' : ''} — add more to help Google crawl your site.`
         : `${internalLinks} internal links found — good crawlability.`);
 
-    // Extract keywords from cleaned body text
     keywords = extractKeywords(bodyText);
 
   } catch (htmlErr) {
     console.warn('HTML fetch/parse error:', htmlErr.message);
-    // Still report HTTPS check already added
   }
 
-  // robots.txt and sitemap.xml
   let baseUrl = targetUrl;
   try { baseUrl = new URL(targetUrl).origin; } catch {}
 
@@ -475,13 +411,11 @@ async function auditHtml(targetUrl) {
 // AI Recommendations
 // ─────────────────────────────────────────────
 
-/** Generate dynamic fallback recs from actual failing checks — not hardcoded strings. */
 function buildFallbackRecs(htmlChecks, failedAudits, keywords, vitals) {
   const recs  = [];
   const fails = htmlChecks.filter(c => c.status !== 'pass');
   const kws   = keywords.slice(0, 3).map(k => k.keyword).join(', ') || 'your main service keywords';
 
-  // Priority order for fallback messages
   const FALLBACK_MAP = [
     { check: 'HTTPS Encryption',         rec: `Your site is running on HTTP, not HTTPS. This is a confirmed Google ranking penalty and also shows a "Not Secure" warning to visitors. Set up a free SSL certificate via Let's Encrypt immediately — this is your single highest-priority fix.` },
     { check: 'H1 Tag',                   rec: `Your H1 tag is missing or duplicated. The H1 is your page's title to Google — it must exist exactly once and contain your primary keywords (${kws}). Fix this before any other on-page SEO work.` },
@@ -501,7 +435,6 @@ function buildFallbackRecs(htmlChecks, failedAudits, keywords, vitals) {
     if (fails.some(f => f.check === check)) recs.push(rec);
   }
 
-  // If we still need more, add a performance rec from vitals
   if (recs.length < 3) {
     const fcpVal = parseFloat(vitals?.fcp);
     if (!isNaN(fcpVal) && fcpVal > 2.5) {
@@ -597,18 +530,97 @@ Format: {"recommendations": ["Full rec 1 here", "Full rec 2 here", "Full rec 3 h
     }
   }
 
-  // Dynamic fallback — never hardcoded
   return buildFallbackRecs(htmlChecks, failedAudits, keywords, vitals);
 }
+
+// ─────────────────────────────────────────────
+// Premium PDF Generator Route
+// ─────────────────────────────────────────────
+const puppeteer = require('puppeteer');
+
+app.post('/download-pdf', async (req, res) => {
+  const data = req.body;
+  if (!data || !data.siteName) return res.status(400).send('Missing audit data');
+
+  try {
+    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { background-color: #080C14; color: #F0F4FF; font-family: -apple-system, sans-serif; padding: 50px; margin: 0; }
+            .header { border-bottom: 1px solid #1E2D45; padding-bottom: 30px; margin-bottom: 40px; }
+            h1 { color: #6366F1; font-size: 38px; margin: 0 0 10px 0; }
+            p { color: #6B7FA3; font-size: 16px; margin: 0; }
+            .score-box { background: #0F1623; border: 1px solid #1E2D45; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 40px; }
+            .score-val { font-size: 64px; font-weight: 900; color: ${data.overallScore >= 80 ? '#10B981' : data.overallScore >= 60 ? '#F59E0B' : '#F43F5E'}; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+            .card { background: #0F1623; border: 1px solid #1E2D45; border-radius: 12px; padding: 20px; text-align: center; }
+            .card-val { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
+            .card-lbl { color: #6B7FA3; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+            .section-title { color: #6366F1; border-bottom: 1px solid #1E2D45; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px; }
+            ul { list-style: none; padding: 0; margin: 0; }
+            li { background: #0F1623; border: 1px solid #1E2D45; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+            .brand { text-align: center; margin-top: 60px; color: #6B7FA3; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>SEO Intelligence Report</h1>
+            <p>Target URL: <strong>${data.url}</strong></p>
+            <p>Generated for: <strong>${data.siteName}</strong></p>
+        </div>
+
+        <div class="score-box">
+            <div class="score-val">${data.overallScore}/100</div>
+            <p style="margin-top: 10px;">${data.scoreLabel}</p>
+        </div>
+
+        <div class="grid">
+            <div class="card"><div class="card-val">${Math.round(data.psScores?.performance || 0)}</div><div class="card-lbl">Performance</div></div>
+            <div class="card"><div class="card-val">${Math.round(data.psScores?.seo || 0)}</div><div class="card-lbl">SEO</div></div>
+            <div class="card"><div class="card-val">${Math.round(data.psScores?.accessibility || 0)}</div><div class="card-lbl">Accessibility</div></div>
+        </div>
+
+        <h2 class="section-title">Expert Action Plan</h2>
+        <ul>
+            ${(data.aiRecommendations || []).map(r => `<li>${r}</li>`).join('')}
+        </ul>
+
+        <div class="brand">Report generated by Diginodal</div>
+    </body>
+    </html>
+    `;
+
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+
+    await browser.close();
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${data.siteName.replace(/\s+/g, '-')}-SEO-Audit.pdf"`,
+      'Content-Length': pdfBuffer.length
+    });
+    res.send(pdfBuffer);
+    
+  } catch (err) {
+    console.error("PDF Error:", err);
+    res.status(500).send('Failed to generate PDF');
+  }
+});
 
 // ─────────────────────────────────────────────
 // /audit endpoint
 // ─────────────────────────────────────────────
 app.post('/audit', async (req, res) => {
-  const { url, name, phone, email } = req.body || {}; // <-- NEW: Extracted email
+  const { url, name, phone, email } = req.body || {}; 
 
-  // Input validation
-  if (!url || !name || !phone || !email) { // <-- NEW: Validates email
+  if (!url || !name || !phone || !email) { 
     return res.status(400).json({ error: 'All fields are required.' });
   }
   if (typeof name !== 'string' || name.trim().length < 2) {
@@ -629,15 +641,13 @@ app.post('/audit', async (req, res) => {
   const targetUrl  = parsedUrl.href;
   const cleanName  = name.trim();
   const cleanPhone = phone.trim();
-  const cleanEmail = email.trim(); // <-- NEW: Cleans email string
+  const cleanEmail = email.trim(); 
 
-  // Default values (used if APIs fail)
   let mobileScores  = { performance: 45, seo: 55, accessibility: 60 };
   let desktopScores = { performance: 50, seo: 55, accessibility: 60 };
   let vitals        = { fcp: 'N/A', lcp: 'N/A', tbt: 'N/A', cls: 'N/A', si: 'N/A' };
   let failedAudits  = [];
 
-  // ── PageSpeed (mobile + desktop in parallel) ──
   const [mobileResult, desktopResult] = await Promise.allSettled([
     runPageSpeed(targetUrl, 'mobile'),
     runPageSpeed(targetUrl, 'desktop'),
@@ -660,7 +670,6 @@ app.post('/audit', async (req, res) => {
     if (lh) {
       const parsed   = parseLighthouse(lh);
       desktopScores  = parsed.scores;
-      // Merge desktop's unique failed audits
       const existingTitles = new Set(failedAudits.map(f => f.title));
       for (const a of parsed.failedAudits) {
         if (!existingTitles.has(a.title)) {
@@ -673,10 +682,8 @@ app.post('/audit', async (req, res) => {
     console.warn('Desktop PageSpeed failed:', desktopResult.reason?.message);
   }
 
-  // ── HTML Audit ──
   const { checks: htmlChecks, htmlHealth, keywords, wordCount } = await auditHtml(targetUrl);
 
-  // ── Final Score ──
   const overallScore = calcOverallScore({
     perfMobile:   mobileScores.performance,
     perfDesktop:  desktopScores.performance,
@@ -686,7 +693,6 @@ app.post('/audit', async (req, res) => {
   });
   const { label: scoreLabel, summary: scoreSummary } = scoreInfo(overallScore);
 
-  // ── AI Recommendations ──
   const aiRecommendations = await getAiRecommendations({
     siteName:    cleanName,
     url:         targetUrl,
@@ -698,7 +704,6 @@ app.post('/audit', async (req, res) => {
     wordCount,
   });
 
-  // ── Save lead (upsert: same phone+url within 24h = update, not duplicate) ──
   try {
     const dayAgo     = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const topIssues  = htmlChecks.filter(c => c.status !== 'pass').slice(0, 3).map(c => c.check);
@@ -707,7 +712,7 @@ app.post('/audit', async (req, res) => {
       { phone: cleanPhone, url: targetUrl, auditDate: { $gte: dayAgo } },
       {
         name: cleanName, 
-        email: cleanEmail, // <-- NEW: Saves email to Database
+        email: cleanEmail, 
         phone: cleanPhone, 
         url: targetUrl,
         overallScore, scoreLabel,
@@ -726,11 +731,10 @@ app.post('/audit', async (req, res) => {
     console.warn('DB upsert failed:', dbErr.message);
   }
 
-  // <-- NEW: Fire Instant Email Alert to your inbox
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       const mailOptions = {
           from: process.env.EMAIL_USER,
-          to: process.env.EMAIL_USER, // Sends the alert to yourself
+          to: process.env.EMAIL_USER, 
           subject: `🚨 HOT SEO LEAD: ${cleanName} (${overallScore}/100)`,
           html: `
               <h2>New SEO Audit Generated</h2>
@@ -754,7 +758,6 @@ app.post('/audit', async (req, res) => {
       performance:   mobileScores.performance,
       seo:           mobileScores.seo,
       accessibility: mobileScores.accessibility,
-      // bonus: desktop perf for dashboard display
       performanceDesktop: desktopScores.performance,
     },
     coreWebVitals: vitals,
@@ -776,7 +779,6 @@ app.get('/leads', async (req, res) => {
     return res.status(403).send('Unauthorized');
   }
 
-  // Basic filters from query params
   const filter      = {};
   const minScore    = parseInt(req.query.minScore);
   const maxScore    = parseInt(req.query.maxScore);
@@ -790,19 +792,17 @@ app.get('/leads', async (req, res) => {
   if (search) filter.$or = [
     { name: { $regex: search, $options: 'i' } },
     { url:  { $regex: search, $options: 'i' } },
-    { email: { $regex: search, $options: 'i' } }, // <-- NEW: Search by email
+    { email: { $regex: search, $options: 'i' } }, 
   ];
 
-  // CSV export
   if (req.query.format === 'csv') {
     try {
       const leads = await Lead.find(filter).sort({ auditDate: -1 }).limit(1000);
       const rows  = [
-        // <-- NEW: Added Email to CSV headers
         ['Date','Name','Email','Phone','Website','Score','Label','Performance','SEO','Accessibility','HTML Health','Top Issues','Contacted'],
         ...leads.map(l => [
           new Date(l.auditDate).toISOString().slice(0, 10),
-          l.name, l.email || '', l.phone, l.url, l.overallScore, l.scoreLabel, // <-- NEW: Added email to CSV export row
+          l.name, l.email || '', l.phone, l.url, l.overallScore, l.scoreLabel, 
           l.pillars?.performance || '', l.pillars?.seo || '',
           l.pillars?.accessibility || '', l.pillars?.htmlHealth || '',
           (l.topIssues || []).join(' | '), l.contacted ? 'Yes' : 'No',
@@ -828,12 +828,10 @@ app.get('/leads', async (req, res) => {
     const scoreClass = s =>
       s >= 80 ? 'good' : s >= 60 ? 'avg' : 'bad';
 
-    // Mask phone: show last 4 digits only
     const maskPhone = p => {
       const digits = p.replace(/\D/g, '');
       return digits.length >= 4 ? '•••• ' + digits.slice(-4) : '••••';
     };
-    // WhatsApp link with full digits
     const waLink = p => `https://wa.me/${p.replace(/\D/g, '')}`;
 
     const qs = (extra = '') => {
@@ -925,7 +923,8 @@ app.get('/leads', async (req, res) => {
         <tr>
           <th>Date</th>
           <th>Business</th>
-          <th>Email</th> <th>Phone</th>
+          <th>Email</th> 
+          <th>Phone</th>
           <th>Website</th>
           <th>Score</th>
           <th>Performance</th>
