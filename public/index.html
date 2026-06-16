@@ -196,7 +196,6 @@
         input:focus + svg.inp-icon,
         .input-wrap:focus-within svg.inp-icon { color: var(--accent); }
 
-        /* Icon fix: icon before input in DOM doesn't work — use label+input+icon layout below */
         .input-wrap input { padding-left: 40px; }
 
         .submit-btn {
@@ -639,7 +638,7 @@
 
         <div id="error-message" class="error-msg"></div>
 
-        <form class="form-card" id="auditForm" onsubmit="handleSubmit(event)">
+        <form class="form-card" id="auditForm">
             <div class="form-row">
                 <div class="field">
                     <label for="name">Business Name</label>
@@ -827,19 +826,6 @@
         return 'var(--bad)';
     }
 
-    function vitalStatus(val, fcpThresh, lcpThresh, tbtThresh, which) {
-        // Returns {color, label} based on which vital
-        const num = parseFloat(val);
-        if (isNaN(num)) return { color: 'var(--muted)', label: '—' };
-        let threshGood, threshOk;
-        if (which === 'fcp')      { threshGood = 1.8; threshOk = 3.0; }
-        else if (which === 'lcp') { threshGood = 2.5; threshOk = 4.0; }
-        else                      { threshGood = 200; threshOk = 600; } // tbt in ms
-        if (num <= threshGood) return { color: 'var(--good)', label: 'GOOD' };
-        if (num <= threshOk)   return { color: 'var(--warn)', label: 'NEEDS WORK' };
-        return { color: 'var(--bad)', label: 'POOR' };
-    }
-
     function animateNumber(el, target, duration = 1200) {
         const start = performance.now();
         const from = 0;
@@ -866,14 +852,10 @@
         const steps = ['s1','s2','s3','s4','s5'];
         steps.forEach((id, i) => {
             setTimeout(() => {
-                // Mark previous as done
-                if (i > 0) {
-                    document.getElementById(steps[i-1]).className = 'step done';
-                }
+                if (i > 0) document.getElementById(steps[i-1]).className = 'step done';
                 document.getElementById(id).className = 'step active';
             }, i * 1300);
         });
-        // Mark last as done after
         return new Promise(res => {
             setTimeout(() => {
                 document.getElementById('s5').className = 'step done';
@@ -882,9 +864,10 @@
         });
     }
 
-    // ── Submit ──
-    async function handleSubmit() {
-        event.preventDefault();
+    // ── EVENT LISTENER (Replaces inline onsubmit) ──
+    document.getElementById('auditForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); // COMPLETELY STOPS PAGE RELOAD
+        
         const name  = document.getElementById('name').value.trim();
         const url   = document.getElementById('url').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -920,7 +903,7 @@
             errEl.textContent = '⚠ We couldn\'t analyze that URL. Double-check it includes "https://" and try again.';
             errEl.style.display = 'block';
         }
-    }
+    });
 
     // ── Restart ──
     function restartAudit() {
@@ -945,7 +928,6 @@
 
         const ring = document.getElementById('score-ring');
         ring.style.stroke = color;
-        // r=60 → circumference = 2π×60 ≈ 377
         setTimeout(() => {
             ring.style.strokeDashoffset = 377 - (377 * score / 100);
         }, 150);
@@ -1048,11 +1030,9 @@
 
         // Show report + staggered reveal
         show('report-state');
-
         const sections = ['sec-score','mb-perf','mb-seo','mb-acc','sec-vitals','sec-html','sec-errors','sec-kw','sec-ai','sec-cta'];
         staggerVisible(sections, 100);
     }
-
 
     // ── Init: show form ──
     document.getElementById('loading-state').style.display = 'none';
