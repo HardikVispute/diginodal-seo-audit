@@ -884,6 +884,7 @@
 
     // ── Submit ──
     async function handleSubmit() {
+        event.preventDefault();
         const name  = document.getElementById('name').value.trim();
         const url   = document.getElementById('url').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -1052,12 +1053,6 @@
         staggerVisible(sections, 100);
     }
 
-    // ── Support pressing Enter in form inputs ──
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && document.getElementById('form-state').style.display !== 'none') {
-            handleSubmit();
-        }
-    });
 
     // ── Init: show form ──
     document.getElementById('loading-state').style.display = 'none';
