@@ -639,7 +639,7 @@
 
         <div id="error-message" class="error-msg"></div>
 
-        <div class="form-card">
+        <form class="form-card" id="auditForm" onsubmit="handleSubmit(event)">
             <div class="form-row">
                 <div class="field">
                     <label for="name">Business Name</label>
@@ -665,10 +665,10 @@
                     </div>
                 </div>
             </div>
-            <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+            <button type="submit" class="submit-btn" id="submit-btn">
                 Run Free Audit →
             </button>
-        </div>
+        </form>
     </div>
 
     <!-- ══════════════════════════ LOADING STATE ══════════════════════════ -->
