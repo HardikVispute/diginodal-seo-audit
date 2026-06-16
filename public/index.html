@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free SEO Audit | Diginodal</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root {
             --bg:        #080C14;
@@ -26,7 +30,11 @@
             --sans:      'Inter', -apple-system, sans-serif;
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
 
         body {
             font-family: var(--sans);
@@ -64,12 +72,18 @@
             justify-content: space-between;
             margin-bottom: 56px;
         }
+        
         .logo {
             font-size: 20px;
             font-weight: 800;
             letter-spacing: -0.5px;
         }
-        .logo em { color: var(--accent); font-style: normal; }
+        
+        .logo em { 
+            color: var(--accent); 
+            font-style: normal; 
+        }
+        
         .badge {
             font-family: var(--mono);
             font-size: 11px;
@@ -81,8 +95,6 @@
         }
 
         /* ── FORM STATE ── */
-        #form-state {}
-
         .hero-eyebrow {
             font-family: var(--mono);
             font-size: 12px;
@@ -99,6 +111,7 @@
             letter-spacing: -1.5px;
             margin-bottom: 18px;
         }
+        
         .hero-title .hl {
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
             -webkit-background-clip: text;
@@ -121,6 +134,7 @@
             gap: 10px;
             margin-bottom: 40px;
         }
+        
         .trust-pill {
             display: flex;
             align-items: center;
@@ -132,7 +146,11 @@
             padding: 6px 14px;
             border-radius: 100px;
         }
-        .trust-pill svg { color: var(--good); flex-shrink: 0; }
+        
+        .trust-pill svg { 
+            color: var(--good); 
+            flex-shrink: 0; 
+        }
 
         /* ── Form card ── */
         .form-card {
@@ -143,6 +161,7 @@
             position: relative;
             overflow: hidden;
         }
+        
         .form-card::before {
             content: '';
             position: absolute;
@@ -152,10 +171,22 @@
             pointer-events: none;
         }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-row { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 16px; 
+            margin-bottom: 16px; 
+        }
 
-        .field { display: flex; flex-direction: column; gap: 8px; }
-        .field.full { grid-column: 1 / -1; }
+        .field { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+        }
+        
+        .field.full { 
+            grid-column: 1 / -1; 
+        }
 
         label {
             font-size: 13px;
@@ -164,7 +195,10 @@
             letter-spacing: 0.3px;
         }
 
-        .input-wrap { position: relative; }
+        .input-wrap { 
+            position: relative; 
+        }
+        
         .input-wrap svg.inp-icon {
             position: absolute;
             left: 14px;
@@ -188,20 +222,32 @@
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input::placeholder { color: var(--faint); }
+        
+        input::placeholder { 
+            color: var(--faint); 
+        }
+        
         input:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
         }
+        
         input:focus + svg.inp-icon,
-        .input-wrap:focus-within svg.inp-icon { color: var(--accent); }
+        .input-wrap:focus-within svg.inp-icon { 
+            color: var(--accent); 
+        }
 
-        .input-wrap input { padding-left: 40px; }
+        .action-buttons { 
+            display: flex; 
+            gap: 12px; 
+            margin-top: 16px; 
+            flex-wrap: wrap; 
+        }
 
         .submit-btn {
-            width: 100%;
+            flex: 1;
+            min-width: 200px;
             padding: 16px;
-            margin-top: 8px;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
             border: none;
             border-radius: 10px;
@@ -215,14 +261,68 @@
             overflow: hidden;
             transition: opacity 0.2s, transform 0.15s;
         }
-        .submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
-        .submit-btn:active { transform: translateY(0); }
-        .submit-btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.08), transparent);
-            pointer-events: none;
+        
+        .submit-btn:hover { 
+            opacity: 0.92; 
+            transform: translateY(-1px); 
+        }
+        
+        .submit-btn:active { 
+            transform: translateY(0); 
+        }
+
+        .sample-btn { 
+            flex: 1; 
+            min-width: 200px; 
+            padding: 16px; 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            color: var(--text); 
+            font-family: var(--sans); 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .sample-btn:hover { 
+            border-color: var(--accent); 
+            background: var(--surface); 
+        }
+
+        /* ── Logo Wall ── */
+        .logo-wall { 
+            margin-top: 60px; 
+            padding-top: 40px; 
+            border-top: 1px solid var(--border); 
+            text-align: center; 
+        }
+        
+        .logo-wall p { 
+            font-size: 13px; 
+            color: var(--muted); 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            margin-bottom: 20px; 
+        }
+        
+        .logos { 
+            display: flex; 
+            justify-content: center; 
+            gap: 40px; 
+            flex-wrap: wrap; 
+            opacity: 0.7; 
+        }
+        
+        .logos span { 
+            font-size: 20px; 
+            font-weight: 800; 
+            font-family: var(--sans); 
+            color: var(--text); 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
         }
 
         .error-msg {
@@ -237,21 +337,31 @@
         }
 
         /* ── LOADING STATE ── */
-        #loading-state { display: none; text-align: center; padding: 40px 0; }
+        #loading-state, #report-wrapper { 
+            display: none; 
+        }
+        
+        #loading-state { 
+            text-align: center; 
+            padding: 40px 0; 
+        }
 
         .radar-wrap {
             position: relative;
             width: 180px; height: 180px;
             margin: 0 auto 36px;
         }
+        
         .radar-circle {
             position: absolute;
             border-radius: 50%;
             border: 1px solid rgba(99,102,241,0.25);
         }
+        
         .radar-circle:nth-child(1) { inset: 0; }
         .radar-circle:nth-child(2) { inset: 25%; }
         .radar-circle:nth-child(3) { inset: 47%; border: 2px solid var(--accent); }
+        
         .radar-sweep {
             position: absolute;
             inset: 0;
@@ -259,18 +369,22 @@
             background: conic-gradient(from 0deg, transparent 270deg, rgba(99,102,241,0.5) 360deg);
             animation: sweep 2s linear infinite;
         }
+        
         .radar-crosshair {
             position: absolute;
             inset: 0;
             display: flex; align-items: center; justify-content: center;
         }
+        
         .radar-crosshair::before, .radar-crosshair::after {
             content: '';
             position: absolute;
             background: rgba(99,102,241,0.2);
         }
+        
         .radar-crosshair::before { width: 100%; height: 1px; }
         .radar-crosshair::after  { width: 1px; height: 100%; }
+        
         @keyframes sweep { to { transform: rotate(360deg); } }
 
         .step-list {
@@ -282,17 +396,31 @@
             line-height: 2.2;
             color: var(--muted);
         }
-        .step-list .step { display: flex; align-items: center; gap: 10px; transition: color 0.3s; }
-        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.3s, box-shadow 0.3s; }
+        
+        .step-list .step { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            transition: color 0.3s; 
+        }
+        
+        .step-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: var(--border); 
+            flex-shrink: 0; 
+            transition: background 0.3s, box-shadow 0.3s; 
+        }
+        
         .step.done { color: var(--good); }
         .step.done .step-dot { background: var(--good); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
         .step.active { color: var(--text); }
         .step.active .step-dot { background: var(--accent); box-shadow: 0 0 8px rgba(99,102,241,0.6); animation: pulse 1s ease infinite; }
+        
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
         /* ── REPORT STATE ── */
-        #report-state { display: none; }
-
         .report-header {
             display: flex;
             align-items: center;
@@ -301,9 +429,23 @@
             gap: 16px;
             margin-bottom: 36px;
         }
-        .report-site { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-        .report-site span { color: var(--text); }
-        .restart-btn {
+        
+        .report-site { 
+            font-family: var(--mono); 
+            font-size: 13px; 
+            color: var(--muted); 
+        }
+        
+        .report-site span { 
+            color: var(--text); 
+        }
+        
+        .header-actions { 
+            display: flex; 
+            gap: 10px; 
+        }
+
+        .ghost-btn {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--muted);
@@ -313,9 +455,15 @@
             font-family: var(--sans);
             cursor: pointer;
             transition: 0.2s;
-            display: flex; align-items: center; gap: 6px;
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
         }
-        .restart-btn:hover { border-color: var(--accent); color: var(--text); }
+        
+        .ghost-btn:hover { 
+            border-color: var(--accent); 
+            color: var(--text); 
+        }
 
         /* ── Score hero ── */
         .score-hero {
@@ -331,6 +479,7 @@
             position: relative;
             overflow: hidden;
         }
+        
         .score-hero::before {
             content: '';
             position: absolute;
@@ -339,20 +488,46 @@
             background: radial-gradient(circle, var(--glow), transparent 65%);
             pointer-events: none;
         }
-        .score-ring-wrap { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
-        .score-ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .score-ring-wrap circle { fill: none; stroke-width: 7; }
+        
+        .score-ring-wrap { 
+            position: relative; 
+            width: 140px; 
+            height: 140px; 
+            flex-shrink: 0; 
+        }
+        
+        .score-ring-wrap svg { 
+            transform: rotate(-90deg); 
+            width: 100%; 
+            height: 100%; 
+        }
+        
+        .score-ring-wrap circle { 
+            fill: none; 
+            stroke-width: 7; 
+        }
+        
         .ring-bg { stroke: var(--border); }
-        .ring-prog { stroke: var(--accent); stroke-dasharray: 377; stroke-dashoffset: 377; stroke-linecap: round; transition: stroke-dashoffset 1.8s cubic-bezier(.22,.61,.36,1); }
+        .ring-prog { 
+            stroke: var(--accent); 
+            stroke-dasharray: 377; 
+            stroke-dashoffset: 377; 
+            stroke-linecap: round; 
+            transition: stroke-dashoffset 1.8s cubic-bezier(.22,.61,.36,1); 
+        }
+        
         .score-num {
             position: absolute; inset: 0;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
         }
+        
         .score-num span { font-size: 40px; font-weight: 900; line-height: 1; }
         .score-num small { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+        
         .score-meta h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
         .score-meta p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 360px; }
+        
         .score-meta .tag {
             display: inline-block;
             font-family: var(--mono);
@@ -371,6 +546,7 @@
             gap: 16px;
             margin-bottom: 24px;
         }
+        
         .metric-box {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -383,13 +559,16 @@
             transform: translateY(16px);
             transition: opacity 0.5s, transform 0.5s;
         }
+        
         .metric-box.visible { opacity: 1; transform: none; }
+        
         .metric-box .m-val {
             font-size: 32px;
             font-weight: 800;
             line-height: 1;
             margin-bottom: 6px;
         }
+        
         .metric-box .m-label {
             font-family: var(--mono);
             font-size: 11px;
@@ -397,6 +576,7 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
         }
+        
         .metric-box .m-bar {
             height: 3px;
             border-radius: 2px;
@@ -404,6 +584,7 @@
             margin-top: 14px;
             overflow: hidden;
         }
+        
         .metric-box .m-bar-fill {
             height: 100%;
             border-radius: 2px;
@@ -419,13 +600,16 @@
             transform: translateY(20px);
             transition: opacity 0.5s, transform 0.5s;
         }
+        
         .section.visible { opacity: 1; transform: none; }
+        
         .sec-head {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 16px;
         }
+        
         .sec-head h3 {
             font-size: 14px;
             font-weight: 700;
@@ -434,6 +618,7 @@
             color: var(--muted);
             font-family: var(--mono);
         }
+        
         .sec-head .line { flex: 1; height: 1px; background: var(--border); }
 
         .inner-card {
@@ -441,6 +626,7 @@
             border: 1px solid var(--border);
             border-radius: 16px;
             overflow: hidden;
+            padding: 20px;
         }
 
         /* ── Vitals ── */
@@ -448,19 +634,24 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
         }
+        
         .vital {
             padding: 22px 18px;
             text-align: center;
             border-right: 1px solid var(--border);
         }
+        
         .vital:last-child { border-right: none; }
+        
         .vital .v-val {
             font-family: var(--mono);
             font-size: 24px;
             font-weight: 500;
             margin-bottom: 4px;
         }
+        
         .vital .v-label { font-size: 12px; color: var(--muted); }
+        
         .vital .v-badge {
             display: inline-block;
             font-size: 10px;
@@ -473,16 +664,17 @@
 
         /* ── Check list ── */
         .check-list { list-style: none; }
+        
         .check-item {
             display: flex;
             align-items: flex-start;
             gap: 14px;
-            padding: 16px 20px;
+            padding: 16px 0;
             border-bottom: 1px solid var(--border);
-            transition: background 0.15s;
         }
+        
         .check-item:last-child { border-bottom: none; }
-        .check-item:hover { background: var(--card); }
+        
         .ci-icon {
             width: 26px; height: 26px;
             border-radius: 50%;
@@ -492,9 +684,11 @@
             margin-top: 1px;
             font-weight: 700;
         }
+        
         .pass .ci-icon { background: rgba(16,185,129,0.12); color: var(--good); }
         .fail .ci-icon { background: rgba(244,63,94,0.12); color: var(--bad); }
         .warn .ci-icon { background: rgba(245,158,11,0.12); color: var(--warn); }
+        
         .ci-body strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; }
         .ci-body p { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
@@ -505,6 +699,7 @@
             gap: 1px;
             background: var(--border);
         }
+        
         .kw-item {
             background: var(--surface);
             padding: 16px;
@@ -512,20 +707,25 @@
             flex-direction: column;
             gap: 4px;
         }
+        
         .kw-word { font-family: var(--mono); font-size: 15px; font-weight: 500; }
         .kw-count { font-size: 12px; color: var(--muted); }
+        
         .kw-bar { height: 3px; border-radius: 2px; background: var(--border); margin-top: 8px; }
         .kw-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 1s ease 0.5s; width: 0; }
 
         /* ── AI Recs ── */
         .rec-list { list-style: none; }
+        
         .rec-item {
             display: flex;
             gap: 16px;
-            padding: 18px 20px;
+            padding: 18px 0;
             border-bottom: 1px solid var(--border);
         }
+        
         .rec-item:last-child { border-bottom: none; }
+        
         .rec-num {
             font-family: var(--mono);
             font-size: 11px;
@@ -535,10 +735,11 @@
             width: 24px;
             padding-top: 1px;
         }
+        
         .rec-text { font-size: 14px; color: var(--muted); line-height: 1.6; }
         .rec-text strong { color: var(--text); }
 
-        /* ── CTA ── */
+        /* ── CTA Cards ── */
         .cta-card {
             background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.06));
             border: 1px solid rgba(99,102,241,0.3);
@@ -547,42 +748,33 @@
             text-align: center;
             margin-top: 32px;
         }
+        
         .cta-card h3 { font-size: 26px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
         .cta-card p { color: var(--muted); font-size: 15px; margin-bottom: 28px; line-height: 1.6; }
+        
         .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-        .wa-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        
+        .btn-primary {
             background: #25D366;
             color: #fff;
             padding: 14px 24px;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 15px;
             text-decoration: none;
             transition: 0.2s;
         }
-        .wa-btn:hover { background: #20BD5A; transform: translateY(-1px); }
-
-        .ghost-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: transparent;
-            color: var(--text);
+        .btn-primary:hover { background: #20BD5A; }
+        
+        .btn-secondary {
+            background: var(--accent);
+            color: #fff;
             padding: 14px 24px;
             border-radius: 10px;
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 700;
             text-decoration: none;
-            border: 1px solid var(--border);
             transition: 0.2s;
-            cursor: pointer;
-            font-family: var(--sans);
         }
-        .ghost-btn:hover { border-color: var(--accent); background: var(--surface); }
+        .btn-secondary:hover { background: var(--accent-2); }
 
         /* ── Utility ── */
         .good { color: var(--good); }
@@ -609,13 +801,11 @@
 <body>
 <div class="wrap">
 
-    <!-- NAV -->
     <nav class="nav">
         <div class="logo">digi<em>nodal</em></div>
         <div class="badge">FREE AUDIT TOOL</div>
     </nav>
 
-    <!-- ══════════════════════════ FORM STATE ══════════════════════════ -->
     <div id="form-state">
         <p class="hero-eyebrow">// SEO Intelligence Report</p>
         <h1 class="hero-title">Find out why you're<br><span class="hl">invisible on Google</span></h1>
@@ -648,6 +838,22 @@
                     </div>
                 </div>
                 <div class="field">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrap">
+                        <input type="email" id="email" required placeholder="founder@business.com">
+                        <svg class="inp-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="field">
+                    <label for="url">Website URL</label>
+                    <div class="input-wrap">
+                        <input type="text" id="url" required placeholder="https://yourwebsite.com">
+                        <svg class="inp-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                    </div>
+                </div>
+                <div class="field">
                     <label for="phone">WhatsApp Number</label>
                     <div class="input-wrap">
                         <input type="tel" id="phone" required placeholder="+91 98765 43210">
@@ -655,22 +861,26 @@
                     </div>
                 </div>
             </div>
-            <div class="form-row">
-                <div class="field full">
-                    <label for="url">Website URL</label>
-                    <div class="input-wrap">
-                        <input type="text" id="url" required placeholder="https://yourwebsite.com">
-                        <svg class="inp-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
-                    </div>
-                </div>
+            <div class="action-buttons">
+                <button type="submit" class="submit-btn" id="submit-btn">
+                    Run Free Audit →
+                </button>
+                <button type="button" class="sample-btn" onclick="loadSampleReport()">
+                    View Sample Report
+                </button>
             </div>
-            <button type="submit" class="submit-btn" id="submit-btn">
-                Run Free Audit →
-            </button>
         </form>
+
+        <div class="logo-wall">
+            <p>Trusted by local brands & digital projects</p>
+            <div class="logos">
+                <span>KoachAI</span>
+                <span>Gaming Zone</span>
+                <span>Diginodal Projects</span>
+            </div>
+        </div>
     </div>
 
-    <!-- ══════════════════════════ LOADING STATE ══════════════════════════ -->
     <div id="loading-state">
         <div class="radar-wrap">
             <div class="radar-circle"></div>
@@ -688,124 +898,118 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════ REPORT STATE ══════════════════════════ -->
-    <div id="report-state">
-
+    <div id="report-wrapper">
         <div class="report-header">
             <div class="report-site">Audit for <span id="res-site-name">—</span></div>
-            <button class="restart-btn" onclick="restartAudit()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                New Audit
-            </button>
-        </div>
-
-        <!-- Score Hero -->
-        <div class="score-hero section" id="sec-score">
-            <div class="score-ring-wrap">
-                <svg viewBox="0 0 130 130">
-                    <circle class="ring-bg" cx="65" cy="65" r="60"></circle>
-                    <circle class="ring-prog" id="score-ring" cx="65" cy="65" r="60"></circle>
-                </svg>
-                <div class="score-num">
-                    <span id="res-overall">0</span>
-                    <small>/ 100</small>
-                </div>
-            </div>
-            <div class="score-meta">
-                <div class="tag" id="score-tag">Analyzing…</div>
-                <h2 id="res-label">Overall Score</h2>
-                <p id="score-summary">Calculating your site's health across performance, SEO, and accessibility signals.</p>
+            <div class="header-actions">
+                <button class="ghost-btn" onclick="downloadPDF()">
+                    ⬇ Download PDF
+                </button>
+                <button class="ghost-btn" onclick="location.reload()">
+                    New Audit
+                </button>
             </div>
         </div>
 
-        <!-- 3 Metrics -->
-        <div class="metrics-row">
-            <div class="metric-box" id="mb-perf">
-                <div class="m-val" id="res-perf">—</div>
-                <div class="m-label">Performance</div>
-                <div class="m-bar"><div class="m-bar-fill" id="bar-perf"></div></div>
-            </div>
-            <div class="metric-box" id="mb-seo">
-                <div class="m-val" id="res-seo">—</div>
-                <div class="m-label">SEO</div>
-                <div class="m-bar"><div class="m-bar-fill" id="bar-seo"></div></div>
-            </div>
-            <div class="metric-box" id="mb-acc">
-                <div class="m-val" id="res-acc">—</div>
-                <div class="m-label">Accessibility</div>
-                <div class="m-bar"><div class="m-bar-fill" id="bar-acc"></div></div>
-            </div>
-        </div>
-
-        <!-- Core Web Vitals -->
-        <div class="section" id="sec-vitals">
-            <div class="sec-head"><div class="line"></div><h3>Core Web Vitals</h3><div class="line"></div></div>
-            <div class="inner-card">
-                <div class="vitals-row">
-                    <div class="vital">
-                        <div class="v-val" id="res-fcp">—</div>
-                        <div class="v-label">First Contentful Paint</div>
-                        <div class="v-badge" id="fcp-badge">—</div>
-                    </div>
-                    <div class="vital">
-                        <div class="v-val" id="res-lcp">—</div>
-                        <div class="v-label">Largest Contentful Paint</div>
-                        <div class="v-badge" id="lcp-badge">—</div>
-                    </div>
-                    <div class="vital">
-                        <div class="v-val" id="res-tbt">—</div>
-                        <div class="v-label">Total Blocking Time</div>
-                        <div class="v-badge" id="tbt-badge">—</div>
+        <div id="printable-report">
+            <div class="score-hero section" id="sec-score">
+                <div class="score-ring-wrap">
+                    <svg viewBox="0 0 130 130">
+                        <circle class="ring-bg" cx="65" cy="65" r="60"></circle>
+                        <circle class="ring-prog" id="score-ring" cx="65" cy="65" r="60"></circle>
+                    </svg>
+                    <div class="score-num">
+                        <span id="res-overall">0</span>
+                        <small>/ 100</small>
                     </div>
                 </div>
+                <div class="score-meta">
+                    <div class="tag" id="score-tag">Analyzing…</div>
+                    <h2 id="res-label">Overall Score</h2>
+                    <p id="score-summary">Calculating your site's health across performance, SEO, and accessibility signals.</p>
+                </div>
+            </div>
+
+            <div class="metrics-row">
+                <div class="metric-box" id="mb-perf">
+                    <div class="m-val" id="res-perf">—</div>
+                    <div class="m-label">Performance</div>
+                    <div class="m-bar"><div class="m-bar-fill" id="bar-perf"></div></div>
+                </div>
+                <div class="metric-box" id="mb-seo">
+                    <div class="m-val" id="res-seo">—</div>
+                    <div class="m-label">SEO</div>
+                    <div class="m-bar"><div class="m-bar-fill" id="bar-seo"></div></div>
+                </div>
+                <div class="metric-box" id="mb-acc">
+                    <div class="m-val" id="res-acc">—</div>
+                    <div class="m-label">Accessibility</div>
+                    <div class="m-bar"><div class="m-bar-fill" id="bar-acc"></div></div>
+                </div>
+            </div>
+
+            <div class="section" id="sec-vitals">
+                <div class="sec-head"><div class="line"></div><h3>Core Web Vitals</h3><div class="line"></div></div>
+                <div class="inner-card">
+                    <div class="vitals-row">
+                        <div class="vital">
+                            <div class="v-val" id="res-fcp">—</div>
+                            <div class="v-label">First Contentful Paint</div>
+                            <div class="v-badge" id="fcp-badge">—</div>
+                        </div>
+                        <div class="vital">
+                            <div class="v-val" id="res-lcp">—</div>
+                            <div class="v-label">Largest Contentful Paint</div>
+                            <div class="v-badge" id="lcp-badge">—</div>
+                        </div>
+                        <div class="vital">
+                            <div class="v-val" id="res-tbt">—</div>
+                            <div class="v-label">Total Blocking Time</div>
+                            <div class="v-badge" id="tbt-badge">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="sec-html">
+                <div class="sec-head"><div class="line"></div><h3>On-Page HTML Checks</h3><div class="line"></div></div>
+                <div class="inner-card">
+                    <ul class="check-list" id="html-checks-list"></ul>
+                </div>
+            </div>
+
+            <div class="section" id="sec-errors">
+                <div class="sec-head"><div class="line"></div><h3>Technical Errors</h3><div class="line"></div></div>
+                <div class="inner-card">
+                    <ul class="check-list" id="failed-audits-list"></ul>
+                </div>
+            </div>
+
+            <div class="section" id="sec-kw">
+                <div class="sec-head"><div class="line"></div><h3>Actual Keywords Found</h3><div class="line"></div></div>
+                <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">We scraped your page text to see what terms your content is actually optimized for — not what you think it is.</p>
+                <div class="inner-card">
+                    <div class="kw-grid" id="keywords-grid"></div>
+                </div>
+            </div>
+
+            <div class="section" id="sec-ai">
+                <div class="sec-head"><div class="line"></div><h3>Expert Action Plan</h3><div class="line"></div></div>
+                <div class="inner-card">
+                    <ul class="rec-list" id="ai-recs-list"></ul>
+                </div>
             </div>
         </div>
-
-        <!-- On-Page HTML Checks -->
-        <div class="section" id="sec-html">
-            <div class="sec-head"><div class="line"></div><h3>On-Page HTML Checks</h3><div class="line"></div></div>
-            <div class="inner-card">
-                <ul class="check-list" id="html-checks-list"></ul>
-            </div>
-        </div>
-
-        <!-- Technical Errors -->
-        <div class="section" id="sec-errors">
-            <div class="sec-head"><div class="line"></div><h3>Technical Errors</h3><div class="line"></div></div>
-            <div class="inner-card">
-                <ul class="check-list" id="failed-audits-list"></ul>
-            </div>
-        </div>
-
-        <!-- Keywords -->
-        <div class="section" id="sec-kw">
-            <div class="sec-head"><div class="line"></div><h3>Actual Keywords Found</h3><div class="line"></div></div>
-            <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">We scraped your page text to see what terms your content is actually optimized for — not what you think it is.</p>
-            <div class="inner-card">
-                <div class="kw-grid" id="keywords-grid"></div>
-            </div>
-        </div>
-
-        <!-- AI Action Plan -->
-        <div class="section" id="sec-ai">
-            <div class="sec-head"><div class="line"></div><h3>Expert Action Plan</h3><div class="line"></div></div>
-            <div class="inner-card">
-                <ul class="rec-list" id="ai-recs-list"></ul>
-            </div>
-        </div>
-
-        <!-- CTA -->
         <div class="cta-card section" id="sec-cta">
-            <h3>Want us to fix all of this?</h3>
-            <p>Diginodal handles everything — from fixing Core Web Vital failures to full SEO setup. Starting at <strong>₹4,999</strong>. No contracts.</p>
+            <h3>Ready to dominate your local search?</h3>
+            <p>People buy conversations before they buy services. Book a free 15-minute review with our team to go over these results. Full implementation starts at just ₹4,999.</p>
             <div class="cta-btns">
-                <a href="https://wa.me/919373982514" target="_blank" class="wa-btn">
-                    <svg style="width:18px;height:18px" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <a href="https://wa.me/919373982514" target="_blank" class="btn-primary">
                     Chat on WhatsApp
                 </a>
-                <button class="ghost-btn" onclick="restartAudit()">
-                    Audit Another Site
-                </button>
+                <a href="https://calendly.com" target="_blank" class="btn-secondary">
+                    Book a 15-Min Review
+                </a>
             </div>
         </div>
 
@@ -864,15 +1068,16 @@
         });
     }
 
-    // ── EVENT LISTENER (Replaces inline onsubmit) ──
+    // ── EVENT LISTENER FOR FORM SUBMIT ──
     document.getElementById('auditForm').addEventListener('submit', async function(e) {
-        e.preventDefault(); // COMPLETELY STOPS PAGE RELOAD
+        e.preventDefault(); 
         
         const name  = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim(); // <-- NEW: Extracts email
         const url   = document.getElementById('url').value.trim();
         const phone = document.getElementById('phone').value.trim();
 
-        if (!name || !url || !phone) return;
+        if (!name || !url || !phone || !email) return;
 
         currentSiteName = name;
         const errEl = document.getElementById('error-message');
@@ -880,7 +1085,7 @@
 
         hide('form-state');
         show('loading-state');
-        hide('report-state');
+        hide('report-wrapper'); // Uses new wrapper ID
 
         const animPromise = runLoadingSteps();
 
@@ -888,7 +1093,7 @@
             const fetchPromise = fetch('/audit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, url, phone })
+                body: JSON.stringify({ name, email, url, phone }) // <-- NEW: Sends email to server
             }).then(r => {
                 if (!r.ok) throw new Error('Server error');
                 return r.json();
@@ -905,12 +1110,60 @@
         }
     });
 
+    // ── NEW: Dummy Data Injection for Sample View ──
+    function loadSampleReport() {
+        currentSiteName = "KoachAI (Sample)";
+        hide('form-state'); 
+        show('loading-state');
+        
+        runLoadingSteps().then(() => {
+            renderReport({
+                overallScore: 68, 
+                scoreLabel: "Needs Improvement",
+                psScores: { performance: 52, seo: 88, accessibility: 90 },
+                coreWebVitals: { fcp: '2.8s', lcp: '4.1s', tbt: '450ms' },
+                htmlChecks: [
+                    { status: 'fail', check: 'HTTPS Encryption', detail: 'Missing SSL certificate.' },
+                    { status: 'pass', check: 'H1 Tag', detail: 'H1 Tag found.' },
+                    { status: 'warn', check: 'Image Alt Text', detail: '3/10 images missing alt text.' }
+                ],
+                extractedKeywords: [
+                    { keyword: "Online Coaching", count: 12 },
+                    { keyword: "AI Tools", count: 8 },
+                    { keyword: "Student Success", count: 5 }
+                ],
+                failedAudits: [
+                    { title: "Reduce unused JavaScript", description: "Remove unused JavaScript to reduce bytes consumed by network activity." }
+                ],
+                aiRecommendations: [
+                    "Install a free Let's Encrypt SSL certificate immediately to prevent 'Not Secure' warnings.",
+                    "Add descriptive alt text to your 3 missing images to boost Google Image ranking.",
+                    "Optimize your mobile load time by compressing your hero images."
+                ]
+            });
+        });
+    }
+
+    // ── NEW: PDF Generation Function ──
+    function downloadPDF() {
+        const element = document.getElementById('printable-report');
+        const opt = {
+            margin:       10,
+            filename:     `${currentSiteName.replace(/\s+/g, '-')}-SEO-Audit.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0F1623' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
     // ── Restart ──
     function restartAudit() {
-        hide('report-state');
+        hide('report-wrapper');
         hide('loading-state');
         show('form-state');
         document.getElementById('url').value = '';
+        document.getElementById('email').value = '';
         document.getElementById('error-message').style.display = 'none';
     }
 
@@ -964,9 +1217,9 @@
         setMetric('res-acc',  'bar-acc',  acc);
 
         // Vitals
-        document.getElementById('res-fcp').textContent = data.coreWebVitals.fcp;
-        document.getElementById('res-lcp').textContent = data.coreWebVitals.lcp;
-        document.getElementById('res-tbt').textContent = data.coreWebVitals.tbt;
+        document.getElementById('res-fcp').textContent = data.coreWebVitals?.fcp || 'N/A';
+        document.getElementById('res-lcp').textContent = data.coreWebVitals?.lcp || 'N/A';
+        document.getElementById('res-tbt').textContent = data.coreWebVitals?.tbt || 'N/A';
 
         function setBadge(id, val, which) {
             const el = document.getElementById(id);
@@ -977,13 +1230,13 @@
             else                      info = num <= 200 ? {c:'rgba(16,185,129,0.12)',tc:'var(--good)',l:'GOOD'} : num <= 600 ? {c:'rgba(245,158,11,0.12)',tc:'var(--warn)',l:'NEEDS WORK'} : {c:'rgba(244,63,94,0.12)',tc:'var(--bad)',l:'POOR'};
             if (!isNaN(num)) { el.style.background = info.c; el.style.color = info.tc; el.textContent = info.l; }
         }
-        setBadge('fcp-badge', parseFloat(data.coreWebVitals.fcp), 'fcp');
-        setBadge('lcp-badge', parseFloat(data.coreWebVitals.lcp), 'lcp');
-        setBadge('tbt-badge', parseFloat(data.coreWebVitals.tbt), 'tbt');
+        setBadge('fcp-badge', parseFloat(data.coreWebVitals?.fcp), 'fcp');
+        setBadge('lcp-badge', parseFloat(data.coreWebVitals?.lcp), 'lcp');
+        setBadge('tbt-badge', parseFloat(data.coreWebVitals?.tbt), 'tbt');
 
         // HTML checks
         const htmlList = document.getElementById('html-checks-list');
-        htmlList.innerHTML = data.htmlChecks.map(c => {
+        htmlList.innerHTML = (data.htmlChecks || []).map(c => {
             const icon  = c.status === 'pass' ? '✓' : c.status === 'fail' ? '✕' : '!';
             const cls   = c.status === 'pass' ? 'pass' : c.status === 'fail' ? 'fail' : 'warn';
             return `<li class="check-item ${cls}">
@@ -1029,14 +1282,14 @@
         }
 
         // Show report + staggered reveal
-        show('report-state');
+        show('report-wrapper');
         const sections = ['sec-score','mb-perf','mb-seo','mb-acc','sec-vitals','sec-html','sec-errors','sec-kw','sec-ai','sec-cta'];
         staggerVisible(sections, 100);
     }
 
     // ── Init: show form ──
     document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('report-state').style.display  = 'none';
+    document.getElementById('report-wrapper').style.display  = 'none';
 </script>
 </body>
 </html>

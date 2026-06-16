@@ -2,17 +2,17 @@
  * Diginodal SEO Audit Engine — Enhanced
  *
  * What changed vs the original:
- *  - SSRF protection: blocks private/loopback IPs before fetching
- *  - Scoring rewrite: transparent, 5-pillar weighted formula (no magic floors)
- *  - PageSpeed: runs BOTH mobile and desktop, picks the worse performer
- *  - failedAudits: deduplicated, sorted by impact score, capped at 8
- *  - HTML checks: +6 new checks (OG tags, canonical, schema, word count, internal links, page weight estimate)
- *  - Keyword extraction: bigram support, 60+ stopword list, filters numbers, TF-style scoring
- *  - Gemini prompt: structured context block with all audit data, asks for 5 recs with titles
- *  - Fallback recs: built dynamically from actual failing checks, not hardcoded strings
- *  - /leads dashboard: styled with score badges, masked phone numbers, search/filter, export CSV
- *  - Input validation: sanitizes name/phone, rejects obviously invalid URLs
- *  - Lead deduplication: upserts by phone+url within a 24h window instead of inserting blindly
+ * - SSRF protection: blocks private/loopback IPs before fetching
+ * - Scoring rewrite: transparent, 5-pillar weighted formula (no magic floors)
+ * - PageSpeed: runs BOTH mobile and desktop, picks the worse performer
+ * - failedAudits: deduplicated, sorted by impact score, capped at 8
+ * - HTML checks: +6 new checks (OG tags, canonical, schema, word count, internal links, page weight estimate)
+ * - Keyword extraction: bigram support, 60+ stopword list, filters numbers, TF-style scoring
+ * - Gemini prompt: structured context block with all audit data, asks for 5 recs with titles
+ * - Fallback recs: built dynamically from actual failing checks, not hardcoded strings
+ * - /leads dashboard: styled with score badges, masked phone numbers, search/filter, export CSV
+ * - Input validation: sanitizes name/phone, rejects obviously invalid URLs
+ * - Lead deduplication: upserts by phone+url within a 24h window instead of inserting blindly
  */
 
 require('dotenv').config();
@@ -22,6 +22,7 @@ const cors       = require('cors');
 const cheerio    = require('cheerio');
 const path       = require('path');
 const { URL }    = require('url');
+const nodemailer = require('nodemailer'); // <-- NEW: Email package
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +32,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
-// Database
+// Database & Mail Transporter
 // ─────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/diginodal_seo')
   .then(() => console.log('✅ MongoDB connected'))
@@ -39,6 +40,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/diginodal_s
 
 const LeadSchema = new mongoose.Schema({
   name:         { type: String, trim: true },
+  email:        { type: String, trim: true }, // <-- NEW: Added Email
   phone:        { type: String, trim: true },
   url:          { type: String, trim: true },
   overallScore: Number,
@@ -56,6 +58,15 @@ const LeadSchema = new mongoose.Schema({
   notes:        { type: String, default: '' },
 });
 const Lead = mongoose.model('Lead', LeadSchema);
+
+// <-- NEW: Configure Nodemailer to send instant alerts
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // ─────────────────────────────────────────────
 // Utilities
@@ -183,13 +194,13 @@ function extractKeywords(text, topN = 8) {
 /**
  * 5-pillar transparent scoring:
  *
- *   Pillar              Weight   Source
- *   ─────────────────── ──────   ───────────────────────────
- *   Performance (mobile)  25%   PageSpeed
- *   Performance (desktop) 10%   PageSpeed
- *   SEO (Lighthouse)      25%   PageSpeed
- *   Accessibility         10%   PageSpeed
- *   HTML Health           30%   Our own checks (0-100 derived)
+ * Pillar              Weight   Source
+ * ─────────────────── ──────   ───────────────────────────
+ * Performance (mobile)  25%   PageSpeed
+ * Performance (desktop) 10%   PageSpeed
+ * SEO (Lighthouse)      25%   PageSpeed
+ * Accessibility         10%   PageSpeed
+ * HTML Health           30%   Our own checks (0-100 derived)
  *
  * HTML Health = (passing checks / total checks) × 100
  * All inputs clamped 0-100 before weighting.
@@ -388,7 +399,7 @@ async function auditHtml(targetUrl) {
     addCheck('Canonical Tag',
       canonical ? 'pass' : 'warning',
       canonical ? `Canonical set to: ${canonical.slice(0, 80)}`
-               : 'No canonical tag — Google may index duplicate versions of this page separately, splitting ranking power.');
+                : 'No canonical tag — Google may index duplicate versions of this page separately, splitting ranking power.');
 
     // 9. Structured Data (JSON-LD or Microdata)
     const jsonLd     = $('script[type="application/ld+json"]').length;
@@ -397,7 +408,7 @@ async function auditHtml(targetUrl) {
     addCheck('Structured Data / Schema',
       hasSchema ? 'pass' : 'warning',
       hasSchema ? `Schema markup detected (${jsonLd} JSON-LD block${jsonLd !== 1 ? 's' : ''}${microdata ? `, ${microdata} microdata element${microdata !== 1 ? 's' : ''}` : ''}).`
-               : 'No schema markup found. Adding LocalBusiness or Organization schema can unlock rich results in Google Search.');
+                : 'No schema markup found. Adding LocalBusiness or Organization schema can unlock rich results in Google Search.');
 
     // 10. Word count (content depth signal)
     $('script, style, noscript, iframe, nav, footer, header, aside').remove();
@@ -594,10 +605,10 @@ Format: {"recommendations": ["Full rec 1 here", "Full rec 2 here", "Full rec 3 h
 // /audit endpoint
 // ─────────────────────────────────────────────
 app.post('/audit', async (req, res) => {
-  const { url, name, phone } = req.body || {};
+  const { url, name, phone, email } = req.body || {}; // <-- NEW: Extracted email
 
   // Input validation
-  if (!url || !name || !phone) {
+  if (!url || !name || !phone || !email) { // <-- NEW: Validates email
     return res.status(400).json({ error: 'All fields are required.' });
   }
   if (typeof name !== 'string' || name.trim().length < 2) {
@@ -618,6 +629,7 @@ app.post('/audit', async (req, res) => {
   const targetUrl  = parsedUrl.href;
   const cleanName  = name.trim();
   const cleanPhone = phone.trim();
+  const cleanEmail = email.trim(); // <-- NEW: Cleans email string
 
   // Default values (used if APIs fail)
   let mobileScores  = { performance: 45, seo: 55, accessibility: 60 };
@@ -694,7 +706,10 @@ app.post('/audit', async (req, res) => {
     await Lead.findOneAndUpdate(
       { phone: cleanPhone, url: targetUrl, auditDate: { $gte: dayAgo } },
       {
-        name: cleanName, phone: cleanPhone, url: targetUrl,
+        name: cleanName, 
+        email: cleanEmail, // <-- NEW: Saves email to Database
+        phone: cleanPhone, 
+        url: targetUrl,
         overallScore, scoreLabel,
         pillars: {
           performance:   mobileScores.performance,
@@ -709,6 +724,26 @@ app.post('/audit', async (req, res) => {
     );
   } catch (dbErr) {
     console.warn('DB upsert failed:', dbErr.message);
+  }
+
+  // <-- NEW: Fire Instant Email Alert to your inbox
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: process.env.EMAIL_USER, // Sends the alert to yourself
+          subject: `🚨 HOT SEO LEAD: ${cleanName} (${overallScore}/100)`,
+          html: `
+              <h2>New SEO Audit Generated</h2>
+              <p><strong>Business Name:</strong> ${cleanName}</p>
+              <p><strong>Website:</strong> <a href="${targetUrl}">${targetUrl}</a></p>
+              <p><strong>Email:</strong> <a href="mailto:${cleanEmail}">${cleanEmail}</a></p>
+              <p><strong>WhatsApp:</strong> <a href="https://wa.me/${cleanPhone.replace(/\D/g, '')}">${cleanPhone}</a></p>
+              <p><strong>Audit Score:</strong> ${overallScore}/100 (${scoreLabel})</p>
+              <br/>
+              <p><a href="https://audit.diginodal.com/leads?key=${process.env.ADMIN_KEY || 'diginodal_admin_2025'}">View Full Dashboard</a></p>
+          `
+      };
+      transporter.sendMail(mailOptions).catch(err => console.error("Email failed to send:", err));
   }
 
   return res.json({
@@ -755,6 +790,7 @@ app.get('/leads', async (req, res) => {
   if (search) filter.$or = [
     { name: { $regex: search, $options: 'i' } },
     { url:  { $regex: search, $options: 'i' } },
+    { email: { $regex: search, $options: 'i' } }, // <-- NEW: Search by email
   ];
 
   // CSV export
@@ -762,10 +798,11 @@ app.get('/leads', async (req, res) => {
     try {
       const leads = await Lead.find(filter).sort({ auditDate: -1 }).limit(1000);
       const rows  = [
-        ['Date','Name','Phone','Website','Score','Label','Performance','SEO','Accessibility','HTML Health','Top Issues','Contacted'],
+        // <-- NEW: Added Email to CSV headers
+        ['Date','Name','Email','Phone','Website','Score','Label','Performance','SEO','Accessibility','HTML Health','Top Issues','Contacted'],
         ...leads.map(l => [
           new Date(l.auditDate).toISOString().slice(0, 10),
-          l.name, l.phone, l.url, l.overallScore, l.scoreLabel,
+          l.name, l.email || '', l.phone, l.url, l.overallScore, l.scoreLabel, // <-- NEW: Added email to CSV export row
           l.pillars?.performance || '', l.pillars?.seo || '',
           l.pillars?.accessibility || '', l.pillars?.htmlHealth || '',
           (l.topIssues || []).join(' | '), l.contacted ? 'Yes' : 'No',
@@ -864,7 +901,7 @@ app.get('/leads', async (req, res) => {
 
   <form method="GET" action="/leads" class="toolbar">
     <input type="hidden" name="key" value="${adminKey}">
-    <input type="text" name="q" placeholder="Search name or URL…" value="${search || ''}">
+    <input type="text" name="q" placeholder="Search name, email, or URL…" value="${search || ''}">
     <select name="contacted">
       <option value="">All leads</option>
       <option value="false" ${contacted === 'false' ? 'selected' : ''}>Not contacted</option>
@@ -888,7 +925,7 @@ app.get('/leads', async (req, res) => {
         <tr>
           <th>Date</th>
           <th>Business</th>
-          <th>Phone</th>
+          <th>Email</th> <th>Phone</th>
           <th>Website</th>
           <th>Score</th>
           <th>Performance</th>
@@ -902,7 +939,7 @@ app.get('/leads', async (req, res) => {
         <tr>
           <td style="color:var(--muted);white-space:nowrap">${new Date(l.auditDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}</td>
           <td><strong>${l.name}</strong></td>
-          <td style="font-family:monospace;color:var(--muted)">${maskPhone(l.phone)}</td>
+          <td><a href="mailto:${l.email}" style="color:var(--text); text-decoration:none;">${l.email || '—'}</a></td> <td style="font-family:monospace;color:var(--muted)">${maskPhone(l.phone)}</td>
           <td><a class="site-link" href="${l.url}" target="_blank">${new URL(l.url).hostname}</a></td>
           <td><span class="score-badge ${scoreClass(l.overallScore)}">${l.overallScore}/100</span></td>
           <td><span style="color:${l.pillars?.performance >= 70 ? 'var(--good)' : l.pillars?.performance >= 50 ? 'var(--warn)' : 'var(--bad)'}">${l.pillars?.performance ?? '—'}</span></td>
